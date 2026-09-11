@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#F4F5F7" id="metaTheme">
+<title>Purchase & Payment — Supplier Book</title>
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%23E84C3D'/><text y='70' x='50' font-size='55' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'>₹</text></svg>">
+</head>
+<body>
+
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<g id="i-plus" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></g>
+<g id="i-minus" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></g>
+<g id="i-x" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></g>
+<g id="i-search" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></g>
+<g id="i-back" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></g>
+<g id="i-phone" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></g>
+<g id="i-whatsapp" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 0 0-7.8 13.5L3 21l4.7-1.2A9 9 0 1 0 12 3z"/><path d="M8.6 9.2c0 3.5 3 6.5 6.5 6.5l2-2.5-2.5-1-1 1c-1.5-.8-2.5-1.8-3.3-3.3l1-1-1-2.5-2.5 2z" fill="currentColor" stroke="none"/></g>
+<g id="i-dots" fill="currentColor" stroke="none"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></g>
+<g id="i-download" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></g>
+<g id="i-call" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></g>
+<g id="i-cog" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></g>
+<g id="i-upload" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></g>
+<g id="i-bell" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></g>
+<g id="i-lock" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></g>
+</defs>
+</svg>
+
+<div class="app" id="app">
+
+  <!-- ============ HOME (parties list) ============ -->
+  <div class="screen" id="screen-home">
+    <header class="top">
+      <div class="top-brand"><span class="logo">₹</span><span class="brand-name">Bahikhata</span></div>
+      <div class="top-actions no-center">
+        <button class="icon-btn" id="searchBtn"><svg viewBox="0 0 24 24"><use href="#i-search"/></svg></button>
+        <button class="icon-btn" id="downloadBtn"><svg viewBox="0 0 24 24"><use href="#i-download"/></svg></button>
+        <button class="icon-btn" id="addBtn"><svg viewBox="0 0 24 24"><use href="#i-plus"/></svg></button>
+        <button class="icon-btn" id="bellBtn"><svg viewBox="0 0 24 24"><use href="#i-bell"/></svg><span class="bell-dot hidden" id="bellDot"></span></button>
+        <button class="icon-btn" id="settingsBtn"><svg viewBox="0 0 24 24"><use href="#i-cog"/></svg></button>
+      </div>
+    </header>
+
+    <div class="search-row hidden" id="searchRow">
+      <div class="search-box"><svg viewBox="0 0 24 24"><use href="#i-search"/></svg><input id="partySearch" placeholder="Search supplier, bill, note, amount…" autocomplete="off"><button class="search-clear hidden" id="searchClear" type="button" aria-label="Clear search"><svg viewBox="0 0 24 24"><use href="#i-x"/></svg></button></div>
+    </div>
+
+    <div class="group-row hidden" id="groupRow"></div>
+
+    <div class="home-summary">
+      <div class="home-sum-seg">
+        <span class="home-sum-k">Suppliers</span>
+        <span class="home-sum-n" id="partyCount">0</span>
+      </div>
+      <div class="home-sum-divider"></div>
+      <div class="home-sum-seg">
+        <span class="home-sum-k">Total amount to pay</span>
+        <span class="home-sum-v" id="headerToPay">₹0</span>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="party-list" id="partyList"></div>
+    </div>
+  </div>
+
+  <!-- ============ KHATA (single party ledger) ============ -->
+  <div class="screen hidden" id="screen-khata">
+    <header class="top">
+      <button class="icon-btn" id="backBtn"><svg viewBox="0 0 24 24"><use href="#i-back"/></svg></button>
+      <div class="top-party" id="khataParty"></div>
+      <div class="top-actions">
+        <button class="icon-btn" id="khataCall"><svg viewBox="0 0 24 24"><use href="#i-phone"/></svg></button>
+        <button class="icon-btn" id="khataMenu"><svg viewBox="0 0 24 24"><use href="#i-dots"/></svg></button>
+      </div>
+    </header>
+
+    <div class="khata-balance" id="khataBalance"></div>
+
+    <div class="khata-list" id="khataList"></div>
+
+    <div class="fab-dock">
+      <button class="fab gave" id="gaveBtn"><svg viewBox="0 0 24 24"><use href="#i-plus"/></svg><span>Purchase</span></button>
+      <button class="fab got" id="gotBtn"><span>Payment</span><svg viewBox="0 0 24 24"><use href="#i-plus"/></svg></button>
+    </div>
+  </div>
+
+  <!-- ============ FAB (home) ============ -->
+
+</div>
+
+<!-- ============ MODALS ============ -->
+<div class="overlay" id="overlay"><div id="modalMount"></div></div>
+<div class="lightbox" id="lightbox"></div>
+<div class="toasts" id="toasts"></div>
+<div id="printArea"></div>
+<input type="file" id="restoreInput" accept=".json,application/json" style="display:none">
+
+<!-- ============ LOGIN ============ -->
+<div class="lock-screen hidden" id="lockScreen">
+  <div class="lock-card">
+    <div class="lock-logo">₹</div>
+    <div class="lock-title">Bahikhata</div>
+    <div class="lock-sub" id="lockSub">Sign in to continue</div>
+    <div class="login-form">
+      <div class="login-field"><label>User ID</label><input id="loginUser" type="text" autocomplete="username" placeholder="Enter user ID"></div>
+      <div class="login-field"><label>Password</label><input id="loginPass" type="password" autocomplete="current-password" placeholder="Enter password"></div>
+      <label class="login-remember"><input id="loginRemember" type="checkbox"> Remember me</label>
+      <div class="login-err hidden" id="loginErr">Invalid user ID or password</div>
+      <button class="big-save primary" id="loginBtn">Sign in</button>
+      <button class="lock-link" id="loginForgot">Forgot password?</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
