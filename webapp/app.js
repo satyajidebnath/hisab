@@ -1060,11 +1060,16 @@ function openEntry(type, existingEntry){
   renderAttach();
   attachBtn.onclick=()=>{ if(requirePermission("upload_bills")) photoInput.click(); };
   cameraBtn.onclick=()=>{ if(requirePermission("upload_bills")) cameraInput.click(); };
+  let pendingAttachmentReads=0;
   const addFiles=files=>{
     Array.from(files||[]).forEach(file=>{
       if(file.type!=="application/pdf" && !file.type.startsWith("image/")){ toast("Only photos and PDF bills are supported"); return; }
+      pendingAttachmentReads++;
+      renderAttach();
       const rd=new FileReader();
-      rd.onload=()=>{ photos.push({name:file.name, data:rd.result, type:file.type}); if(photos.length>10) photos.shift(); renderAttach(); };
+      rd.onload=()=>{ photos.push({name:file.name, data:rd.result, type:file.type}); if(photos.length>10) photos.shift(); };
+      rd.onerror=()=>toast("Could not read "+(file.name||"attachment"));
+      rd.onloadend=()=>{ pendingAttachmentReads=Math.max(0,pendingAttachmentReads-1); renderAttach(); };
       rd.readAsDataURL(file);
     });
   };
@@ -1072,6 +1077,7 @@ function openEntry(type, existingEntry){
   cameraInput.onchange=()=>{ addFiles(cameraInput.files); cameraInput.value=""; };
   setTimeout(()=>{ const a=$("#eAmount"); if(a)a.focus(); },80);
   $("#eSave").onclick=async()=>{
+    if(pendingAttachmentReads>0){ toast("Please wait, photos are still loading"); return; }
     let amt=parseFloat($("#eAmount").value);
     // if allocating (new payment), fall back to allocated total when amount empty
     if((!amt||amt<=0) && !editing && !isGave){
@@ -1240,11 +1246,16 @@ function openDaybookSheet(){
       $$(".attach-chip button", photoList).forEach(btn=>btn.onclick=()=>{ photos.splice(Number(btn.dataset.i),1); renderPhotos(); });
     };
     row._photos=photos;
+    row._pendingPhotoReads=0;
     row.querySelector(".db-attach").onclick=()=>photoInput.click();
     photoInput.onchange=()=>{
       Array.from(photoInput.files||[]).forEach(file=>{
+        if(!file.type.startsWith("image/")){ toast("Only photos are supported here"); return; }
+        row._pendingPhotoReads++;
         const reader=new FileReader();
-        reader.onload=()=>{ photos.push(reader.result); if(photos.length>10) photos.shift(); renderPhotos(); };
+        reader.onload=()=>{ photos.push(reader.result); if(photos.length>10) photos.shift(); };
+        reader.onerror=()=>toast("Could not read "+(file.name||"photo"));
+        reader.onloadend=()=>{ row._pendingPhotoReads=Math.max(0,(row._pendingPhotoReads||0)-1); renderPhotos(); };
         reader.readAsDataURL(file);
       });
       photoInput.value="";
@@ -1261,6 +1272,7 @@ function openDaybookSheet(){
     const before=JSON.parse(JSON.stringify(db));
     const saveBtn=$("#daybookSave");
     const entries=Array.from(rowsEl.querySelectorAll(".daybook-row"));
+    if(entries.some(row=>(row._pendingPhotoReads||0)>0)){ toast("Please wait, photos are still loading"); return; }
     const payload=[];
     for(const row of entries){
       const supplierId=row.querySelector(".db-supplier").value;
