@@ -151,9 +151,9 @@ async function supabaseSetPermissions(id,permissions){ return getSB().rpc('set_s
 async function supabaseDeactivateUser(id){ return getSB().rpc('deactivate_staff',{target_user:id}); }
 async function supabasePullState(){ const {data,error}=await getSB().rpc('get_workspace_state'); if(error) throw error; return data||{parties:[],groups:[],audit:[],notifyDays:null}; }
 function dataUrlToBlob(dataUrl){
-  const match=String(dataUrl).match(/^data:([^;]+);base64,(.*)$/s);
+  const match=String(dataUrl).match(/^data:([^;]*);base64,(.*)$/s);
   if(!match) return null;
-  const mime=match[1], b64=match[2], bin=atob(b64), bytes=new Uint8Array(bin.length);
+  const mime=match[1]||"image/jpeg", b64=match[2], bin=atob(b64), bytes=new Uint8Array(bin.length);
   for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
   return new Blob([bytes],{type:mime});
 }

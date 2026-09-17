@@ -65,7 +65,8 @@ function loadImageForResize(dataUrl){
 }
 
 async function prepareAttachmentFile(file){
-  const dataUrl=await readFileAsDataUrl(file);
+  let dataUrl=await readFileAsDataUrl(file);
+  if(isProbablyImageFile(file) && String(dataUrl).startsWith("data:;base64,")) dataUrl="data:image/jpeg;base64,"+String(dataUrl).slice("data:;base64,".length);
   if(!file || !isProbablyImageFile(file) || String(file.type||"").toLowerCase()==="image/gif") return dataUrl;
   const originalSize=Number(file.size)||0;
   if(originalSize>0 && originalSize<=1400000) return dataUrl;
@@ -1136,7 +1137,7 @@ function openEntry(type, existingEntry){
       pendingAttachmentReads++;
       renderAttach();
       prepareAttachmentFile(file)
-        .then(data=>{ photos.push({name:file.name||"Camera photo", data, type:isProbablyImageFile(file)?attachmentTypeFor(file,data):attachmentTypeFor(file,data)}); if(photos.length>10) photos.shift(); })
+        .then(data=>{ photos.push({name:file.name||"Camera photo", data, type:attachmentTypeFor(file,data)}); if(photos.length>10) photos.shift(); })
         .catch(()=>toast("Could not read "+(file.name||"attachment")))
         .finally(()=>{ pendingAttachmentReads=Math.max(0,pendingAttachmentReads-1); renderAttach(); });
     });
