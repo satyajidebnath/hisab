@@ -187,6 +187,12 @@ async function supabaseHydrateAttachments(state){
   }
   return copy;
 }
+function withTimeout(promise,ms,message){
+  let timer;
+  const timeout=new Promise((_,reject)=>{ timer=setTimeout(()=>reject(new Error(message||'Operation timed out')),ms); });
+  return Promise.race([promise,timeout]).finally(()=>clearTimeout(timer));
+}
+
 async function supabasePrepareAttachments(state){
   const copy=JSON.parse(JSON.stringify(state));
   window.__hisabAttachmentUploadWarning='';
@@ -203,61 +209,19 @@ async function supabasePrepareAttachments(state){
         continue;
       }
       const isPdf=String(item).startsWith('data:application/pdf');
-      try{
-        const uploaded=await supabaseUploadDataUrl(item,(isPdf?'bill':'photo')+'-'+(e.id||'entry')+'-'+(i+1)+(isPdf?'.pdf':'.jpg'));
-        if(uploaded && typeof uploaded==='object'){
-          nextPhotos.push(uploaded.url);
-          nextPaths[nextPhotos.length-1]=uploaded.path;
-        }else{
-          throw new Error('Upload did not return a stored file');
-        }
-      }catch(err){
-        console.warn('Attachment upload skipped so ledger entry can still save',err);
-        window.__hisabAttachmentUploadWarning='Entry saved, but one or more photos could not upload from this device.';
-      }
+      const uploaded=await withTimeout(
+        supabaseUploadDataUrl(item,(isPdf?'bill':'photo')+'-'+(e.id||'entry')+'-'+(i+1)+(isPdf?'.pdf':'.jpg')),
+        20000,
+        'Photo upload timed out. Please check mobile internet and try again.'
+      );
+      if(!uploaded || typeof uploaded!=='object') throw new Error('Photo upload failed. Please try again.');
+      nextPhotos.push(uploaded.url);
+      nextPaths[nextPhotos.length-1]=uploaded.path;
     }
     e.photos=nextPhotos;
     e.attachmentPaths=nextPaths;
   }
   return copy;
-}
-function canonicalize(value){
-  if(Array.isArray(value)) return value.map(canonicalize);
-  if(value && typeof value==='object'){
-    const out={};
-    Object.keys(value).sort().forEach(k=>{ out[k]=canonicalize(value[k]); });
-    return out;
-  }
-  return value;
-}
-function sameCloudState(a,b){
-  return JSON.stringify(canonicalize(a))===JSON.stringify(canonicalize(b));
-}
-
-function supabasePushState(state,options={}){
-  const snapshot=JSON.parse(JSON.stringify(state));
-  const allowEmptyCloud=options.allowEmptyCloud===true;
-  pushQueue=pushQueue.catch(()=>{}).then(async()=>{
-    if(!supabaseIsConfigured()) throw new Error('Sync is not configured');
-    const session=await supabaseGetSession();
-    if(!session) throw new Error('You must be signed in to save data');
-    const profile=await supabaseGetProfile();
-    if(!profile?.active) throw new Error('Your account is inactive');
-    if(!allowEmptyCloud && (!snapshot || !Array.isArray(snapshot.parties) || snapshot.parties.length===0)){
-      console.warn('Blocked automatic empty save');
-      return null;
-    }
-    // Upload attachments first. The database is updated only after every file
-    // upload succeeds, so an entry is never confirmed while its bill is missing.
-    const cloudState=await supabasePrepareAttachments(snapshot);
-    const {data:confirmed,error}=await getSB().rpc('save_workspace_state',{new_data:cloudState,required_permission:options.permission||'write_data'});
-    if(error) throw error;
-    if(!confirmed || !sameCloudState(confirmed,cloudState)){
-      throw new Error('Saved data did not match the submitted data. Please try again.');
-    }
-    return confirmed;
-  });
-  return pushQueue;
 }
 async function supabaseStartRealtime(onChange){
   if(!supabaseIsConfigured()) return;
