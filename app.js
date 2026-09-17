@@ -1166,6 +1166,7 @@ function openEntry(type, existingEntry){
     }
     const before=JSON.parse(JSON.stringify(db));
     let editedEntry=null;
+    let newEntry=null;
     if(editing){
       editedEntry={...e0};
       editedEntry.amount=amt; editedEntry.billNo=billNo; editedEntry.note=$("#eNote").value.trim();
@@ -1201,6 +1202,7 @@ function openEntry(type, existingEntry){
         if(allocs.length) entry.allocations=allocs;
       }
       currentParty.history.push(entry);
+      newEntry=cloneState(entry);
       auditLog("add-entry", currentParty.name, label+" ₹"+fmtMoney(amt)+(billNo?" · "+billNo:""));
     }
     const saveBtn=$("#eSave");
@@ -1221,7 +1223,22 @@ function openEntry(type, existingEntry){
         if(cloud.audit.length>500) cloud.audit.length=500;
         return cloud;
       }
-    }:{beforeState:before,permission:"add_entries"});
+    }:{
+      beforeState:before,
+      permission:"add_entries",
+      cloudMutator:(cloud)=>{
+        if(!Array.isArray(cloud.parties)) cloud.parties=[];
+        const party=cloud.parties.find(x=>x && x.id===currentParty.id);
+        if(!party) throw new Error("Supplier was not found in the latest saved data. Please reload and try again.");
+        if(!Array.isArray(party.history)) party.history=[];
+        if(!newEntry) throw new Error("New ledger entry was not prepared. Please try again.");
+        if(!party.history.some(x=>x && x.id===newEntry.id)) party.history.push(cloneState(newEntry));
+        if(!Array.isArray(cloud.audit)) cloud.audit=[];
+        cloud.audit.unshift({ts:nowStamp(),type:"add-entry",subject:currentParty.name,detail:label+" ₹"+fmtMoney(amt)+(billNo?" · "+billNo:"")});
+        if(cloud.audit.length>500) cloud.audit.length=500;
+        return cloud;
+      }
+    });
     if(!ok){ db=before; ensureEntryIds(); if(saveBtn){saveBtn.disabled=false; saveBtn.textContent=editing?"Save changes":label+" ₹";} renderKhata(); return; }
     closeSheet(); renderKhata(); renderHome();
     toast(editing?("Updated "+label):(label+" "+fmtMoney(amt))+" · Saved");
