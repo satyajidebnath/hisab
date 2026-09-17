@@ -356,6 +356,7 @@ async function saveDB(options={}){
       notifyDays:confirmed.notifyDays===null || confirmed.notifyDays===undefined ? null : Number(confirmed.notifyDays)
     });
     lastCloudState=cloneState(db);
+    if(window.__hisabAttachmentUploadWarning) setTimeout(()=>toast(window.__hisabAttachmentUploadWarning),300);
     return true;
   }catch(e){
     console.error("Save failed:",e);

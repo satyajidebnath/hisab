@@ -189,17 +189,35 @@ async function supabaseHydrateAttachments(state){
 }
 async function supabasePrepareAttachments(state){
   const copy=JSON.parse(JSON.stringify(state));
+  window.__hisabAttachmentUploadWarning='';
   for(const p of (copy.parties||[])) for(const e of (p.history||[])){
-    const arr=e.photos||[];
-    for(let i=0;i<arr.length;i++) if(String(arr[i]).startsWith('data:')){
-      const isPdf=String(arr[i]).startsWith('data:application/pdf');
-      const uploaded=await supabaseUploadDataUrl(arr[i],(isPdf?'bill':'photo')+'-'+(e.id||'entry')+'-'+(i+1)+(isPdf?'.pdf':'.jpg'));
-      if(uploaded && typeof uploaded==='object'){
-        e.attachmentPaths=e.attachmentPaths||[];
-        e.attachmentPaths[i]=uploaded.path;
-        arr[i]=uploaded.url;
+    const arr=Array.isArray(e.photos)?e.photos:[];
+    const nextPhotos=[];
+    const nextPaths=[];
+    for(let i=0;i<arr.length;i++){
+      const item=arr[i];
+      const existingPath=Array.isArray(e.attachmentPaths)?e.attachmentPaths[i]:'';
+      if(!String(item).startsWith('data:')){
+        nextPhotos.push(item);
+        if(existingPath) nextPaths[nextPhotos.length-1]=existingPath;
+        continue;
+      }
+      const isPdf=String(item).startsWith('data:application/pdf');
+      try{
+        const uploaded=await supabaseUploadDataUrl(item,(isPdf?'bill':'photo')+'-'+(e.id||'entry')+'-'+(i+1)+(isPdf?'.pdf':'.jpg'));
+        if(uploaded && typeof uploaded==='object'){
+          nextPhotos.push(uploaded.url);
+          nextPaths[nextPhotos.length-1]=uploaded.path;
+        }else{
+          throw new Error('Upload did not return a stored file');
+        }
+      }catch(err){
+        console.warn('Attachment upload skipped so ledger entry can still save',err);
+        window.__hisabAttachmentUploadWarning='Entry saved, but one or more photos could not upload from this device.';
       }
     }
+    e.photos=nextPhotos;
+    e.attachmentPaths=nextPaths;
   }
   return copy;
 }
