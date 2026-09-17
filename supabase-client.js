@@ -165,7 +165,7 @@ async function supabaseUploadDataUrl(dataUrl,fileName){
   const safe=String(fileName||'bill').replace(/[^a-zA-Z0-9._-]/g,'_').slice(-100);
   const path=profile.workspace_id+'/'+user.id+'/bills/'+Date.now()+'-'+Math.random().toString(36).slice(2,9)+'-'+safe;
   const {error}=await getSB().storage.from('bill-attachments').upload(path,blob,{contentType:blob.type,upsert:false});
-  if(error) throw error;
+  if(error) throw new Error('Photo upload failed: '+(error.message||'Please try smaller or fewer photos.'));
   const {data,error:signError}=await getSB().storage.from('bill-attachments').createSignedUrl(path,60*60*24*7);
   if(signError) throw signError;
   return {url:data.signedUrl,path};

@@ -28,6 +28,75 @@ const fmtTime = iso => {
 const todayISO = () => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); };
 const nowStamp = () => new Date().toISOString();
 
+function isProbablyImageFile(file){
+  const type=String(file?.type||"").toLowerCase();
+  const name=String(file?.name||"").toLowerCase();
+  return type.startsWith("image/") || (!type && (!name || /\.(jpe?g|png|webp|heic|heif)$/i.test(name)));
+}
+
+function isProbablyPdfFile(file){
+  const type=String(file?.type||"").toLowerCase();
+  const name=String(file?.name||"").toLowerCase();
+  return type==="application/pdf" || /\.pdf$/i.test(name);
+}
+
+function attachmentTypeFor(file,dataUrl){
+  const type=String(file?.type||"");
+  if(type) return type;
+  const match=String(dataUrl||"").match(/^data:([^;,]+)/);
+  return match ? match[1] : (isProbablyImageFile(file)?"image/jpeg":"application/octet-stream");
+}
+function readFileAsDataUrl(file){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=()=>resolve(reader.result);
+    reader.onerror=()=>reject(reader.error||new Error("Could not read file"));
+    reader.readAsDataURL(file);
+  });
+}
+
+function loadImageForResize(dataUrl){
+  return new Promise((resolve,reject)=>{
+    const img=new Image();
+    img.onload=()=>resolve(img);
+    img.onerror=()=>reject(new Error("Could not load image"));
+    img.src=dataUrl;
+  });
+}
+
+async function prepareAttachmentFile(file){
+  const dataUrl=await readFileAsDataUrl(file);
+  if(!file || !isProbablyImageFile(file) || String(file.type||"").toLowerCase()==="image/gif") return dataUrl;
+  const originalSize=Number(file.size)||0;
+  if(originalSize>0 && originalSize<=1400000) return dataUrl;
+  try{
+    const img=await loadImageForResize(dataUrl);
+    const maxSide=1600;
+    const scale=Math.min(1,maxSide/Math.max(img.naturalWidth||img.width,img.naturalHeight||img.height));
+    if(scale>=1 && originalSize<=2500000) return dataUrl;
+    const canvas=document.createElement("canvas");
+    canvas.width=Math.max(1,Math.round((img.naturalWidth||img.width)*scale));
+    canvas.height=Math.max(1,Math.round((img.naturalHeight||img.height)*scale));
+    const ctx=canvas.getContext("2d");
+    ctx.drawImage(img,0,0,canvas.width,canvas.height);
+    return canvas.toDataURL("image/jpeg",0.78);
+  }catch(e){
+    console.warn("Image compression skipped",e);
+    return dataUrl;
+  }
+}
+function waitForCondition(check,timeoutMs=15000){
+  const started=Date.now();
+  return new Promise(resolve=>{
+    const tick=()=>{
+      if(check()) return resolve(true);
+      if(Date.now()-started>=timeoutMs) return resolve(false);
+      setTimeout(tick,120);
+    };
+    tick();
+  });
+}
+
 function amountToWords(n){
   n=Number(n)||0; if(n<=0) return "";
   const ones=["","One","Two","Three","Four","Five","Six","Seven","Eight","Nine","Ten","Eleven","Twelve","Thirteen","Fourteen","Fifteen","Sixteen","Seventeen","Eighteen","Nineteen"];
@@ -1063,21 +1132,20 @@ function openEntry(type, existingEntry){
   let pendingAttachmentReads=0;
   const addFiles=files=>{
     Array.from(files||[]).forEach(file=>{
-      if(file.type!=="application/pdf" && !file.type.startsWith("image/")){ toast("Only photos and PDF bills are supported"); return; }
+      if(!isProbablyPdfFile(file) && !isProbablyImageFile(file)){ toast("Only photos and PDF bills are supported"); return; }
       pendingAttachmentReads++;
       renderAttach();
-      const rd=new FileReader();
-      rd.onload=()=>{ photos.push({name:file.name, data:rd.result, type:file.type}); if(photos.length>10) photos.shift(); };
-      rd.onerror=()=>toast("Could not read "+(file.name||"attachment"));
-      rd.onloadend=()=>{ pendingAttachmentReads=Math.max(0,pendingAttachmentReads-1); renderAttach(); };
-      rd.readAsDataURL(file);
+      prepareAttachmentFile(file)
+        .then(data=>{ photos.push({name:file.name||"Camera photo", data, type:isProbablyImageFile(file)?attachmentTypeFor(file,data):attachmentTypeFor(file,data)}); if(photos.length>10) photos.shift(); })
+        .catch(()=>toast("Could not read "+(file.name||"attachment")))
+        .finally(()=>{ pendingAttachmentReads=Math.max(0,pendingAttachmentReads-1); renderAttach(); });
     });
   };
   photoInput.onchange=()=>{ addFiles(photoInput.files); photoInput.value=""; };
   cameraInput.onchange=()=>{ addFiles(cameraInput.files); cameraInput.value=""; };
   setTimeout(()=>{ const a=$("#eAmount"); if(a)a.focus(); },80);
   $("#eSave").onclick=async()=>{
-    if(pendingAttachmentReads>0){ toast("Please wait, photos are still loading"); return; }
+    if(pendingAttachmentReads>0){ toast("Preparing photos..."); const ready=await waitForCondition(()=>pendingAttachmentReads===0); if(!ready){ toast("Photos are still loading. Please try again."); return; } }
     let amt=parseFloat($("#eAmount").value);
     // if allocating (new payment), fall back to allocated total when amount empty
     if((!amt||amt<=0) && !editing && !isGave){
@@ -1250,13 +1318,12 @@ function openDaybookSheet(){
     row.querySelector(".db-attach").onclick=()=>photoInput.click();
     photoInput.onchange=()=>{
       Array.from(photoInput.files||[]).forEach(file=>{
-        if(!file.type.startsWith("image/")){ toast("Only photos are supported here"); return; }
+        if(!isProbablyImageFile(file)){ toast("Only photos are supported here"); return; }
         row._pendingPhotoReads++;
-        const reader=new FileReader();
-        reader.onload=()=>{ photos.push(reader.result); if(photos.length>10) photos.shift(); };
-        reader.onerror=()=>toast("Could not read "+(file.name||"photo"));
-        reader.onloadend=()=>{ row._pendingPhotoReads=Math.max(0,(row._pendingPhotoReads||0)-1); renderPhotos(); };
-        reader.readAsDataURL(file);
+        prepareAttachmentFile(file)
+          .then(data=>{ photos.push(data); if(photos.length>10) photos.shift(); })
+          .catch(()=>toast("Could not read "+(file.name||"photo")))
+          .finally(()=>{ row._pendingPhotoReads=Math.max(0,(row._pendingPhotoReads||0)-1); renderPhotos(); });
       });
       photoInput.value="";
     };
@@ -1272,7 +1339,7 @@ function openDaybookSheet(){
     const before=JSON.parse(JSON.stringify(db));
     const saveBtn=$("#daybookSave");
     const entries=Array.from(rowsEl.querySelectorAll(".daybook-row"));
-    if(entries.some(row=>(row._pendingPhotoReads||0)>0)){ toast("Please wait, photos are still loading"); return; }
+    if(entries.some(row=>(row._pendingPhotoReads||0)>0)){ toast("Preparing photos..."); const ready=await waitForCondition(()=>entries.every(row=>(row._pendingPhotoReads||0)===0)); if(!ready){ toast("Photos are still loading. Please try again."); return; } }
     const payload=[];
     for(const row of entries){
       const supplierId=row.querySelector(".db-supplier").value;
